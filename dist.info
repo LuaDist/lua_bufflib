@@ -1,7 +1,7 @@
 --- This file is part of LuaDist project
 
 name = "lua_bufflib"
-version = "2.1"
+version = "0.2.1"
 
 desc = "A library for string buffers in Lua."
 author = "@Choonster"
