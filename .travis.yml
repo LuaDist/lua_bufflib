@@ -1,38 +1,51 @@
-﻿language: c
+#
+# LuaDist Travis-CI Hook
+#
 
+# We assume C build environments
+language: C
+
+# Try using multiple Lua Implementations
 env:
-  global:
-    - LUA_CPATH="/home/travis/build/Choonster/lua_bufflib/?.so"
-    - LUA_LIBDIR=/usr/lib/x86_64-linux-gnu/
-  matrix:
-    - "LUA=lua5.1 LIBLUA=liblua5.1-dev     LUA_INCDIR=/usr/include/lua5.1     LUA_LIB=lua5.1"
-    - "LUA=lua5.2 LIBLUA=liblua5.2-dev     LUA_INCDIR=/usr/include/lua5.2     LUA_LIB=lua5.2"
-    - "LUA=luajit LIBLUA=libluajit-5.1-dev LUA_INCDIR=/usr/include/luajit-2.0 LUA_LIB=luajit-5.1"
+  - TOOL="gcc"                  # Use native compiler (GCC usually)
+  - TOOL="clang"                # Use clang
+  - TOOL="i686-w64-mingw32"     # 32bit MinGW
+  - TOOL="x86_64-w64-mingw32"   # 64bit MinGW
+  - TOOL="arm-linux-gnueabihf"  # ARM hard-float (hf), linux
 
+# Crosscompile builds may fail
+matrix:
+  allow_failures:
+    - env: TOOL="i686-w64-mingw32"
+    - env: TOOL="x86_64-w64-mingw32"
+    - env: TOOL="arm-linux-gnueabihf"
+
+# Install dependencies
+install:
+  - git clone git://github.com/LuaDist/Tools.git ~/_tools
+  - ~/_tools/travis/travis install
+
+# Bootstap
+before_script:
+  - ~/_tools/travis/travis bootstrap
+
+# Build the module
+script:
+  - ~/_tools/travis/travis build
+
+# Execute additional tests or commands
+after_script:
+  - ~/_tools/travis/travis test
+
+# Only watch the master branch
 branches:
   only:
     - master
 
-#compiler:
-#  - "clang"
-#  - "gcc"
-
-before_install:
-  - 'if [ $LUA = "luajit" ]; then sudo add-apt-repository ppa:mwild1/ppa -y && sudo apt-get update -y; fi'
-
-install:
-  - "sudo apt-get install $LUA -y"
-  - "sudo apt-get install $LIBLUA -y"
-
-script:
-  - "gcc -ansi -O2 -fPIC -I $LUA_INCDIR -L $LUA_LIBDIR -l$LUA_LIB -c lua_bufflib.c -o bufflib.o"
-  - "gcc -shared -o bufflib.so bufflib.o"
-  - "echo $PWD"
-  - "echo $CC"
-  - "ls bufflib.so"
-  - "$LUA -v test_bufflib.lua"
-
+# Notify the LuaDist Dev group if needed
 notifications:
+  recipients:
+    - luadist-dev@googlegroups.com
   email:
-    on_failure: always
     on_success: change
+    on_failure: always
